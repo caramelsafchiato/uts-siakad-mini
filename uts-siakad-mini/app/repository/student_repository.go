@@ -50,3 +50,17 @@ func (r *StudentRepository) GetByID(ctx context.Context, id int) (*model.Student
 
 	return &s, nil
 }
+
+func (r *StudentRepository) Update(ctx context.Context, id int, s model.Student) error {
+	query := `UPDATE students SET nim = $1, nama = $2, prodi = $3, angkatan = $4, ipk_terakhir = $5 WHERE id = $6`
+	
+	_, err := r.DB.Exec(ctx, query, s.Nim, s.Nama, s.Prodi, s.Angkatan, s.IpkTerakhir, id)
+	return err
+}
+
+// Delete menghapus data mahasiswa berdasarkan ID
+func (r *StudentRepository) Delete(ctx context.Context, id int) error {
+	query := `DELETE FROM students WHERE id = $1`
+	_, err := r.DB.Exec(ctx, query, id)
+	return err
+}
