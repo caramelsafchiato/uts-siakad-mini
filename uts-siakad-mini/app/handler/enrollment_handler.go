@@ -28,7 +28,8 @@ func (h *EnrollmentHandler) EnrollCourse(c *fiber.Ctx) error {
 	}
 
 	if err := h.Service.TakeCourse(c.Context(), req); err != nil {
-		if err.Error() == "kuota mata kuliah sudah penuh" {
+		// Tangkap error spesifik dari repository
+		if err.Error() == "kuota mata kuliah sudah penuh" || err.Error() == "mahasiswa sudah mengambil mata kuliah ini di tahun akademik tersebut" {
 			return helper.Fail(c, fiber.StatusConflict, err.Error()) // 409 Conflict
 		}
 		return helper.Fail(c, fiber.StatusInternalServerError, "Gagal mengambil mata kuliah atau data tidak ditemukan")
