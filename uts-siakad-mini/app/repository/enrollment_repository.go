@@ -17,7 +17,7 @@ func NewEnrollmentRepository(db *pgxpool.Pool) *EnrollmentRepository {
 	return &EnrollmentRepository{DB: db}
 }
 
-// Enroll memproses pengambilan KRS dengan Transaction
+// Enroll memproses pengambilan KRS dengan Transaction dan validasi Anti-Dobel
 func (r *EnrollmentRepository) Enroll(ctx context.Context, enrollment model.Enrollment) error {
 	// Mulai transaksi database
 	tx, err := r.DB.Begin(ctx)
@@ -26,7 +26,18 @@ func (r *EnrollmentRepository) Enroll(ctx context.Context, enrollment model.Enro
 	}
 	defer tx.Rollback(ctx)
 
-	// 1. Cek kuota dengan penguncian baris (FOR UPDATE)
+	// 1. VALIDASI ANTI-DOBEL: Cek apakah mahasiswa sudah ambil matkul ini di tahun akademik yang sama
+	var isDuplicate bool
+	checkQuery := `SELECT EXISTS(SELECT 1 FROM enrollments WHERE student_id = $1 AND course_id = $2 AND tahun_akademik = $3)`
+	err = tx.QueryRow(ctx, checkQuery, enrollment.StudentID, enrollment.CourseID, enrollment.TahunAkademik).Scan(&isDuplicate)
+	if err != nil {
+		return err
+	}
+	if isDuplicate {
+		return errors.New("mahasiswa sudah mengambil mata kuliah ini di tahun akademik tersebut")
+	}
+
+	// 2. Cek kuota dengan penguncian baris (FOR UPDATE)
 	var kuota int
 	err = tx.QueryRow(ctx, "SELECT kuota FROM courses WHERE id = $1 FOR UPDATE", enrollment.CourseID).Scan(&kuota)
 	if err != nil {
@@ -37,15 +48,15 @@ func (r *EnrollmentRepository) Enroll(ctx context.Context, enrollment model.Enro
 		return errors.New("kuota mata kuliah sudah penuh")
 	}
 
-	// 2. Kurangi kuota mata kuliah (-1)
+	// 3. Kurangi kuota mata kuliah (-1)
 	_, err = tx.Exec(ctx, "UPDATE courses SET kuota = kuota - 1 WHERE id = $1", enrollment.CourseID)
 	if err != nil {
 		return err
 	}
 
-	// 3. Masukkan data KRS
-	query := `INSERT INTO enrollments (student_id, course_id, tahun_akademik, created_at) VALUES ($1, $2, $3, $4)`
-	_, err = tx.Exec(ctx, query, enrollment.StudentID, enrollment.CourseID, enrollment.TahunAkademik, time.Now())
+	// 4. Masukkan data KRS
+	insertQuery := `INSERT INTO enrollments (student_id, course_id, tahun_akademik, created_at) VALUES ($1, $2, $3, $4)`
+	_, err = tx.Exec(ctx, insertQuery, enrollment.StudentID, enrollment.CourseID, enrollment.TahunAkademik, time.Now())
 	if err != nil {
 		return err
 	}
