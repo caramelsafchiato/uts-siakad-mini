@@ -45,4 +45,5 @@ func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
 	// Endpoint Mahasiswa
 	protected.Get("/students", studentHandler.GetAll)
 	protected.Get("/students/:id", studentHandler.GetByID)
+	protected.Put("/students/:id", studentHandler.Update)
 }
