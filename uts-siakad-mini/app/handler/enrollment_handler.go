@@ -50,3 +50,24 @@ func (h *EnrollmentHandler) GetMyEnrollments(c *fiber.Ctx) error {
 
 	return helper.OK(c, fiber.StatusOK, "Berhasil mendapatkan daftar KRS", enrollments, nil)
 }
+
+func (h *EnrollmentHandler) GetAll(c *fiber.Ctx) error {
+	enrollments, err := h.Service.GetAllEnrollments(c.Context())
+	if err != nil {
+		return helper.Fail(c, fiber.StatusInternalServerError, "Gagal mengambil data pendaftaran")
+	}
+	return helper.OK(c, fiber.StatusOK, "Berhasil mengambil seluruh data KRS", enrollments, nil)
+}
+
+func (h *EnrollmentHandler) Cancel(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return helper.Fail(c, fiber.StatusBadRequest, "ID tidak valid")
+	}
+
+	if err := h.Service.CancelEnrollment(c.Context(), id); err != nil {
+		return helper.Fail(c, fiber.StatusNotFound, "Data KRS tidak ditemukan atau gagal dibatalkan")
+	}
+
+	return helper.OK(c, fiber.StatusOK, "Berhasil membatalkan KRS, kuota telah dikembalikan", nil, nil)
+}

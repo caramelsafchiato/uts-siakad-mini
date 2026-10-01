@@ -89,3 +89,54 @@ func (r *EnrollmentRepository) GetByStudentID(ctx context.Context, studentID int
 	}
 	return results, nil
 }
+
+// GetAll mengambil seluruh data pendaftaran KRS (biasanya untuk admin)
+func (r *EnrollmentRepository) GetAll(ctx context.Context) ([]model.Enrollment, error) {
+	query := `SELECT id, student_id, course_id, tahun_akademik, created_at FROM enrollments`
+	rows, err := r.DB.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var enrollments []model.Enrollment
+	for rows.Next() {
+		var e model.Enrollment
+		err := rows.Scan(&e.ID, &e.StudentID, &e.CourseID, &e.TahunAkademik, &e.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		enrollments = append(enrollments, e)
+	}
+	return enrollments, nil
+}
+
+// Delete membatalkan KRS dan mengembalikan kuota (+1)
+func (r *EnrollmentRepository) Delete(ctx context.Context, id int) error {
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// 1. Cari course_id dari data pendaftaran ini
+	var courseID int
+	err = tx.QueryRow(ctx, "SELECT course_id FROM enrollments WHERE id = $1 FOR UPDATE", id).Scan(&courseID)
+	if err != nil {
+		return err // Data KRS tidak ditemukan
+	}
+
+	// 2. Hapus data KRS
+	_, err = tx.Exec(ctx, "DELETE FROM enrollments WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+
+	// 3. Kembalikan kuota (+1) ke tabel courses
+	_, err = tx.Exec(ctx, "UPDATE courses SET kuota = kuota + 1 WHERE id = $1", courseID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}

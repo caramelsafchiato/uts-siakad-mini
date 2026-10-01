@@ -21,3 +21,11 @@ func (s *EnrollmentService) TakeCourse(ctx context.Context, enrollment model.Enr
 func (s *EnrollmentService) GetStudentEnrollments(ctx context.Context, studentID int) ([]map[string]interface{}, error) {
 	return s.Repo.GetByStudentID(ctx, studentID)
 }
+
+func (s *EnrollmentService) GetAllEnrollments(ctx context.Context) ([]model.Enrollment, error) {
+	return s.Repo.GetAll(ctx)
+}
+
+func (s *EnrollmentService) CancelEnrollment(ctx context.Context, id int) error {
+	return s.Repo.Delete(ctx, id)
+}

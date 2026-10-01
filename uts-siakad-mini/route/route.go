@@ -61,7 +61,7 @@ func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
 	protected.Delete("/students/:id", studentHandler.Delete)
 
 	// Endpoint Mata Kuliah
-	protected.Get("/courses", courseHandler.GetAll)// Endpoint Mata Kuliah
+	protected.Get("/courses", courseHandler.GetAll)
 	protected.Get("/courses", courseHandler.GetAll)
 	protected.Get("/courses/:id", courseHandler.GetByID)
 	protected.Post("/courses", courseHandler.Create)
@@ -71,4 +71,6 @@ func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
 	//KRS
 	protected.Post("/enrollments", enrollmentHandler.EnrollCourse) 
 	protected.Get("/students/:student_id/enrollments", enrollmentHandler.GetMyEnrollments)
+	protected.Get("/enrollments", enrollmentHandler.GetAll)
+	protected.Delete("/enrollments/:id", enrollmentHandler.Cancel)
 }
