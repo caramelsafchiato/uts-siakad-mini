@@ -29,6 +29,11 @@ func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
 	courseService := service.NewCourseService(courseRepo)
 	courseHandler := handler.NewCourseHandler(courseService)
 
+	// KRS (Enrollment)
+	enrollmentRepo := repository.NewEnrollmentRepository(db)
+	enrollmentService := service.NewEnrollmentService(enrollmentRepo)
+	enrollmentHandler := handler.NewEnrollmentHandler(enrollmentService)
+
 	// --- ROUTING ---
 	
 	api := app.Group("/api/v1")
@@ -62,4 +67,8 @@ func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
 	protected.Post("/courses", courseHandler.Create)
 	protected.Put("/courses/:id", courseHandler.Update)
 	protected.Delete("/courses/:id", courseHandler.Delete)
+
+	//KRS
+	protected.Post("/enrollments", enrollmentHandler.EnrollCourse) 
+	protected.Get("/students/:student_id/enrollments", enrollmentHandler.GetMyEnrollments)
 }
