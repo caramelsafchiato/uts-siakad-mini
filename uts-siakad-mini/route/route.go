@@ -11,10 +11,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// ... (bagian atas biarkan tetap sama)
 
 func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
-	// Inisialisasi Repo & Service Auth
+	// STUDENTTTT
 	userRepo := repository.NewUserRepository(db)
 	authService := service.NewAuthService(userRepo)
 	authHandler := handler.NewAuthHandler(authService)
@@ -46,4 +45,25 @@ func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
 	protected.Get("/students", studentHandler.GetAll)
 	protected.Get("/students/:id", studentHandler.GetByID)
 	protected.Put("/students/:id", studentHandler.Update)
+	protected.Delete("/students/:id", studentHandler.Delete)
+
+
+	//COURSE
+	courseRepo := repository.NewCourseRepository(db)
+	courseService := service.NewCourseService(courseRepo)
+	courseHandler := handler.NewCourseHandler(courseService)
+
+	api := app.Group("/api/v1")
+	
+	// Area Bebas Akses
+	auth := api.Group("/auth")
+	auth.Post("/login", authHandler.Login)
+
+	// Area TerPROTEKSI
+	protected := api.Group("/", middleware.Protected())
+
+	// ... (Rute /me dan /students yang sudah ada) ...
+
+	// Endpoint Mata Kuliah
+	protected.Get("/courses", courseHandler.GetAll)
 }
