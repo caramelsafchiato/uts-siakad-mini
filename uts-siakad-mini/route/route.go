@@ -45,6 +45,9 @@ func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
 	// Area TerPROTEKSI (Wajib bawa Token JWT)
 	protected := api.Group("/", middleware.Protected())
 
+	// Middleware khusus Admin
+	adminOnly := middleware.RequireRole("admin")
+
 	protected.Get("/me", func(c *fiber.Ctx) error {
 		userID := c.Locals("user_id")
 		role := c.Locals("role")
@@ -62,7 +65,6 @@ func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
 
 	// Endpoint Mata Kuliah
 	protected.Get("/courses", courseHandler.GetAll)
-	protected.Get("/courses", courseHandler.GetAll)
 	protected.Get("/courses/:id", courseHandler.GetByID)
 	protected.Post("/courses", courseHandler.Create)
 	protected.Put("/courses/:id", courseHandler.Update)
@@ -73,4 +75,7 @@ func SetupRoutes(app *fiber.App, db *pgxpool.Pool) {
 	protected.Get("/students/:student_id/enrollments", enrollmentHandler.GetMyEnrollments)
 	protected.Get("/enrollments", enrollmentHandler.GetAll)
 	protected.Delete("/enrollments/:id", enrollmentHandler.Cancel)
+
+	protected.Get("/enrollments", adminOnly, enrollmentHandler.GetAll)
+	protected.Delete("/enrollments/:id", adminOnly, enrollmentHandler.Cancel)
 }
